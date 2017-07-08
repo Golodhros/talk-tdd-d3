@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+
+        <title>Better D3 Charts with TDD</title>
+
+        <meta name="description" content="Code for talk about D3 best practices">
+        <meta name="author" content="Marcos Iglesias">
+
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+        <link rel="logo" type="image/svg" href="/logo.svg" />
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <style type="text/css">
+            body {
+                background-color: #fdf6e3;
+            }
+
+            /* From: https://bl.ocks.org/mbostock/3885304 */
+            .bar {
+              fill: #586e75;
+            }
+
+            .bar:hover {
+              fill: #268bd2;
+            }
+
+            .axis--x path {
+              display: none;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div class="chart-container"></div>
+
+        <script data-main="src/main" src="node_modules/requirejs/require.js"></script>
+    </body>
+</html>

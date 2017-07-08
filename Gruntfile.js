@@ -10,7 +10,7 @@ module.exports = function(grunt) {
                 src: [
                     'src/chart/bar.js'
                 ],
-                dest: 'dist/tdd-d3.js'
+                dest: 'dist/bar.js'
             }
         },
 
@@ -21,11 +21,10 @@ module.exports = function(grunt) {
             },
             js: {
                 files: {
-                    'dist/tdd-d3.min.js': ['dist/tdd-d3.js']
+                    'dist/bar.min.js': ['dist/bar.js']
                 }
             }
         }
-
     });
 
     grunt.loadNpmTasks('grunt-contrib-concat');
@@ -33,6 +32,4 @@ module.exports = function(grunt) {
 
     grunt.registerTask('build', ['concat', 'uglify']);
     grunt.registerTask('default', 'build');
-
 };
-

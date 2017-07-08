@@ -20,7 +20,6 @@ define(function(require){
         var margin = {top: 20, right: 20, bottom: 30, left: 40},
             width = 960,
             height = 500,
-            gap = 2,
             data,
             chartWidth, chartHeight,
             xScale, yScale,
@@ -29,7 +28,7 @@ define(function(require){
 
             // Dispatcher object to broadcast the 'customHover' event
             // Ref: https://github.com/mbostock/d3/wiki/Internals#d3_dispatch
-            dispatch = d3.dispatch('customHover'),
+            dispatcher = d3.dispatch('customMouseOver'),
 
             // extractors
             getLetter = function(d) { return d.letter; },
@@ -60,13 +59,9 @@ define(function(require){
          * @private
          */
         function buildAxis(){
-            xAxis = d3.svg.axis()
-                .scale(xScale)
-                .orient('bottom');
+            xAxis = d3.axisBottom(xScale);
 
-            yAxis = d3.svg.axis()
-                .scale(yScale)
-                .orient('left')
+            yAxis = d3.axisLeft(yScale)
                 .ticks(10, '%');
         }
 
@@ -76,11 +71,10 @@ define(function(require){
          * @private
          */
         function buildContainerGroups(){
-            var container = svg.append('g')
+            var container = svg
+              .append('g')
                 .classed('container-group', true)
-                .attr({
-                    transform: 'translate(' + margin.left + ',' + margin.top + ')'
-                });
+                .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
             container.append('g').classed('chart-group', true);
             container.append('g').classed('x-axis-group axis', true);
@@ -92,13 +86,13 @@ define(function(require){
          * @private
          */
         function buildScales(){
-            xScale = d3.scale.ordinal()
-                .domain(data.map(getLetter))
-                .rangeRoundBands([0, chartWidth], 0.1);
+            xScale = d3.scaleBand()
+                .rangeRound([0, chartWidth]).padding(0.1)
+                .domain(data.map(getLetter));
 
-            yScale = d3.scale.linear()
-                .domain([0, d3.max(data, getFrequency)])
-                .range([chartHeight, 0]);
+            yScale = d3.scaleLinear()
+                .rangeRound([chartHeight, 0])
+                .domain([0, d3.max(data, getFrequency)]);
         }
 
         /**
@@ -108,19 +102,17 @@ define(function(require){
         function buildSVG(container){
             if (!svg) {
                 svg = d3.select(container)
-                    .append('svg')
+                  .append('svg')
                     .classed('bar-chart', true);
 
                 buildContainerGroups();
             }
-            svg.transition().attr({
-                width: width + margin.left + margin.right,
-                height: height + margin.top + margin.bottom
-            });
+            svg.transition()
+                .attr('width', width)
+                .attr('height', height);
         }
 
         /**
-         * @description
          * Draws the x and y axis on the svg object within their
          * respective groups
          * @private
@@ -139,79 +131,78 @@ define(function(require){
          * @private
          */
         function drawBars(){
-            var gapSize = xScale.rangeBand() / 100 * gap,
-                barW = xScale.rangeBand() - gapSize,
-                bars = svg.select('.chart-group').selectAll('.bar').data(data);
+            var bars = svg.select('.chart-group').selectAll('.bar')
+                .data(data);
 
             // Enter
             bars.enter()
-                .append('rect')
+              .append('rect')
                 .classed('bar', true)
-                .attr({
-                    width: barW,
-                    x: chartWidth, // Initially drawing the bars at the end of Y axis
-                    y: function(d) { return yScale(d.frequency); },
-                    height: function(d) { return chartHeight - yScale(d.frequency); }
-                })
-                // This is basically saying: when mouse hovers a bar,
-                // trigger the customHover event in the dispatch object
-                .on('mouseover', dispatch.customHover);
-
-            // Update
-            bars
-                .attr({
-                    width: barW,
-                    x: function(d) { return xScale(d.letter) + gapSize/2; },
-                    y: function(d) { return yScale(d.frequency); },
-                    height: function(d) { return chartHeight - yScale(d.frequency); }
+                .attr('x', function(d) { return xScale(d.letter); })
+                .attr('y', function(d) { return yScale(d.frequency); })
+                .attr('width', xScale.bandwidth())
+                .attr('height', function(d) { return chartHeight - yScale(d.frequency); })
+                .on('mouseover', function() {
+                    dispatcher.call('customMouseOver', this);
                 });
 
             // Exit
             bars.exit()
-                .style({ opacity: 0 }).remove();
+                .style('opacity', 0)
+                .remove();
         }
 
         /**
          * Gets or Sets the margin of the chart
          * @param  {object} _x Margin object to get/set
-         * @return { margin | module} Current margin or Bar Chart module to chain calls
+         * @return {margin | module} Current margin or Bar Chart module to chain calls
          * @public
          */
         exports.margin = function(_x) {
             if (!arguments.length) return margin;
             margin = _x;
+
             return this;
         };
 
         /**
          * Gets or Sets the width of the chart
          * @param  {number} _x Desired width for the graph
-         * @return { width | module} Current width or Bar Chart module to chain calls
+         * @return {width | module} Current width or Bar Chart module to chain calls
          * @public
          */
         exports.width = function(_x) {
             if (!arguments.length) return width;
             width = _x;
+
             return this;
         };
 
         /**
          * Gets or Sets the height of the chart
          * @param  {number} _x Desired width for the graph
-         * @return { height | module} Current height or Bar Char module to chain calls
+         * @return {height | module} Current height or Bar Char module to chain calls
          * @public
          */
         exports.height = function(_x) {
             if (!arguments.length) return height;
             height = _x;
+
             return this;
         };
 
-        // Copies the method "on" from dispatch to exports, making it accesible
-        // from outside
-        //
-        // Reference: https://github.com/mbostock/d3/wiki/Internals#rebind
-        d3.rebind(exports, dispatch, "on");
+        /**
+         * Exposes an 'on' method that acts as a bridge with the event dispatcher
+         * We are going to expose the customMouseOver event
+         *
+         * @return {module} Bar Chart
+         * @public
+         */
+        exports.on = function() {
+            var value = dispatcher.on.apply(dispatcher, arguments);
+
+            return value === dispatcher ? exports : value;
+        };
 
         return exports;
     };
