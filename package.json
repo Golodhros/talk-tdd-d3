@@ -5,6 +5,7 @@
     "d3": "4.9.1"
   },
   "scripts": {
+    "start": "grunt build",
     "test": "karma start",
     "build": "grunt build"
   },
